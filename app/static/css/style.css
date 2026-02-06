@@ -1,0 +1,366 @@
+:root {
+  --background: rgb(19, 32, 67);
+  --card-bg: rgba(31, 65, 114, 0.4);
+  --accent-pink: rgb(241, 180, 187);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --border-glow: rgba(241, 180, 187, 0.3);
+  --salmon-pink: hsl(353, 100%, 78%);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body.dark-theme {
+  background-color: var(--background);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  background-image: linear-gradient(135deg, var(--background) 0%, #0c1421 100%);
+}
+
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 260px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  padding: 30px 20px;
+  position: fixed;
+  height: 100vh;
+  z-index: 100;
+}
+
+.sidebar-logo {
+  margin-bottom: 50px;
+  text-align: center;
+}
+
+.logo-text {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent-pink);
+  letter-spacing: -2px;
+}
+
+nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 12px 20px;
+  text-align: left;
+  font-size: 1rem;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  transition: all 0.3s ease;
+}
+
+.nav-btn:hover,
+.nav-btn.active {
+  background: rgba(241, 180, 187, 0.1);
+  color: var(--accent-pink);
+}
+
+.nav-btn .icon {
+  font-size: 1.2rem;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  text-align: center;
+}
+
+.tip-small {
+  font-size: 0.8rem;
+  color: var(--accent-pink);
+  opacity: 0.8;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 260px;
+  padding: 40px;
+  max-width: calc(100vw - 260px);
+}
+
+.view {
+  display: none;
+  animation: fadeIn 0.4s ease;
+}
+
+.view.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.timer-big {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--accent-pink);
+  text-align: center;
+  margin: 30px 0;
+  text-shadow: 0 0 20px var(--border-glow);
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 10px 0;
+  border-bottom: 2px solid var(--accent-pink);
+}
+
+.logo h1 {
+  font-size: 2rem;
+  color: var(--accent-pink);
+  text-shadow: 0 0 10px var(--border-glow);
+}
+
+.search-bar {
+  display: flex;
+  gap: 10px;
+}
+
+.search-bar input {
+  padding: 10px 15px;
+  border-radius: 20px;
+  border: 1px solid var(--accent-pink);
+  background: transparent;
+  color: white;
+  width: 250px;
+  backdrop-filter: blur(5px);
+}
+
+.search-bar button {
+  padding: 10px 20px;
+  border-radius: 20px;
+  border: none;
+  background-color: var(--salmon-pink);
+  color: var(--background);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.search-bar button:hover {
+  transform: scale(1.05);
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+#user-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid var(--accent-pink);
+}
+
+#daily-tip {
+  font-style: italic;
+  color: var(--accent-pink);
+}
+
+.toast {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: var(--accent-pink);
+  color: var(--background);
+  padding: 12px 25px;
+  border-radius: 12px;
+  font-weight: 600;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.user-meta h2 {
+  font-size: 1.5rem;
+  color: var(--accent-pink);
+}
+
+.rating-display {
+  margin-left: auto;
+  text-align: center;
+}
+
+#current-rating {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--accent-pink);
+}
+
+.streak-badges {
+  display: flex;
+  gap: 15px;
+  margin-left: 20px;
+}
+
+.badge {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 5px 15px;
+  border-radius: 15px;
+  font-size: 0.9rem;
+  border: 1px solid var(--accent-pink);
+  color: var(--accent-pink);
+}
+
+.heatmap-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 10px 0;
+}
+
+.heatmap-day {
+  width: 12px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+}
+
+.heatmap-day.level-1 {
+  background: #4b2c3a;
+}
+
+.heatmap-day.level-2 {
+  background: #7c3a4d;
+}
+
+.heatmap-day.level-3 {
+  background: #b44a63;
+}
+
+.heatmap-day.level-4 {
+  background: #f1b4bb;
+}
+
+.friend-actions {
+  margin-left: 20px;
+}
+
+#add-friend-btn {
+  background: transparent;
+  border: 1px solid var(--accent-pink);
+  color: var(--accent-pink);
+  padding: 5px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+#add-friend-btn:hover {
+  background: var(--accent-pink);
+  color: var(--background);
+}
+
+#friend-list {
+  list-style: none;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.chart-container {
+  height: 250px;
+  position: relative;
+}
+
+h3 {
+  margin-bottom: 15px;
+  color: var(--salmon-pink);
+}
+
+#contest-list {
+  list-style: none;
+}
+
+.contest-item {
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+}
+
+.contest-item:last-child {
+  border-bottom: none;
+}
+
+.contest-time {
+  color: var(--accent-pink);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  header {
+    flex-direction: column;
+    gap: 20px;
+  }
+}

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>merge_requests | Social CF Tracker</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="dark-theme">
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <span class="logo-text">m_r</span>
+            </div>
+            <nav>
+                <button onclick="switchView('home')" class="nav-btn"><span class="icon">🏠</span> Home</button>
+                <button onclick="switchView('dashboard')" class="nav-btn active"><span class="icon">📊</span>
+                    Dashboard</button>
+                <button onclick="switchView('contests')" class="nav-btn"><span class="icon">🏆</span> Contests</button>
+                <button onclick="switchView('problemset')" class="nav-btn"><span class="icon">🧩</span>
+                    Problems</button>
+                <button onclick="switchView('profile')" class="nav-btn"><span class="icon">👤</span> Profile</button>
+            </nav>
+            <div class="sidebar-footer">
+                <span class="tip-small">Tip: Keep coding!</span>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <div class="logo">
+                    <h1>merge_requests</h1>
+                </div>
+                <!-- ... existing search ... -->
+                <div class="search-bar">
+                    <input type="text" id="handle-input" placeholder="Enter CF Handle...">
+                    <button onclick="fetchData()">Search</button>
+                </div>
+            </header>
+
+            <div id="views-container">
+                <!-- Dashboard View -->
+                <div id="dashboard-view" class="view active">
+                    <section id="profile-section" class="card">
+                        <div class="profile-header">
+                            <img id="user-avatar" src="" alt="Avatar">
+                            <div class="user-meta">
+                                <h2 id="user-handle">Search for a handle...</h2>
+                                <p id="user-rank"></p>
+                            </div>
+                            <div class="streak-badges">
+                                <div class="badge">🔥 Current: <span id="current-streak">0</span></div>
+                                <div class="badge">🏆 Max: <span id="max-streak">0</span></div>
+                            </div>
+                            <div class="friend-actions">
+                                <button onclick="addFriend()" id="add-friend-btn" style="display:none;">+ Add
+                                    Friend</button>
+                            </div>
+                            <div class="rating-display">
+                                <span id="current-rating">0</span>
+                                <small>Current Rating</small>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="dashboard-grid">
+                        <section id="friends-section" class="card">
+                            <h3>Friends</h3>
+                            <ul id="friend-list">
+                                <!-- Friends will be listed here -->
+                            </ul>
+                        </section>
+
+                        <section id="heatmap-section" class="card" style="grid-column: span 2;">
+                            <h3>Activity Heatmap</h3>
+                            <div id="heatmap-container" class="heatmap-grid">
+                                <!-- Heatmap rendered by JS -->
+                            </div>
+                        </section>
+
+                        <section id="stats-section" class="card">
+                            <h3>Rating Comparison</h3>
+                            <div class="chart-container">
+                                <canvas id="rating-chart"></canvas>
+                            </div>
+                        </section>
+
+                        <section id="language-section" class="card">
+                            <h3>Language Usage</h3>
+                            <div class="chart-container">
+                                <canvas id="language-chart"></canvas>
+                            </div>
+                        </section>
+
+                        <section id="difficulty-section" class="card">
+                            <h3>Difficulty Distribution</h3>
+                            <div class="chart-container">
+                                <canvas id="difficulty-chart"></canvas>
+                            </div>
+                        </section>
+
+                        <section id="tag-mastery" class="card">
+                            <h3>Tag Mastery</h3>
+                            <div class="chart-container">
+                                <canvas id="tag-chart"></canvas>
+                            </div>
+                        </section>
+
+                        <section id="contests-section" class="card">
+                            <h3>Upcoming Contests</h3>
+                            <ul id="contest-list">
+                                <!-- Contests will be listed here -->
+                            </ul>
+                        </section>
+
+                        <section id="summary-section" class="card">
+                            <h3>Weekly Summary</h3>
+                            <div id="weekly-stats">
+                                <p>Solved: <span id="weekly-solved">0</span></p>
+                                <p>Top Tag: <span id="weekly-tag">N/A</span></p>
+                                <p>Rating Delta: <span id="weekly-delta">0</span></p>
+                            </div>
+                        </section>
+
+                        <section id="tip-section" class="card">
+                            <h3>Tip of the Day</h3>
+                            <p id="daily-tip" style="font-style: italic; color: var(--accent-pink);"></p>
+                        </section>
+
+                        <section id="chat-section" class="card" style="grid-column: span 2; display:none;">
+                            <h3>Chat with <span id="chat-with-user">...</span></h3>
+                            <div id="chat-messages"
+                                style="height:200px; overflow-y:auto; border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:10px; padding:10px; display:flex; flex-direction:column; gap:5px;">
+                                <!-- Messages -->
+                            </div>
+                            <div class="chat-input" style="display:flex; gap:10px;">
+                                <input type="text" id="chat-input-field" placeholder="Type a message..."
+                                    style="flex:1; background:transparent; border:1px solid var(--accent-pink); border-radius:10px; padding:5px 10px; color:white;">
+                                <button onclick="sendMessage()"
+                                    style="padding:5px 15px; border-radius:10px; background:var(--accent-pink); border:none; color:var(--background); cursor:pointer; font-weight:600;">Send</button>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- Home View -->
+                <div id="home-view" class="view" style="display:none;">
+                    <section class="card">
+                        <h3>Welcome to merge_requests</h3>
+                        <p>Your social companion for competitive programming.</p>
+                    </section>
+                    <section id="blogs-container" class="dashboard-grid">
+                        <!-- Blogs will be here -->
+                    </section>
+                </div>
+
+                <!-- Contests View -->
+                <div id="contests-view" class="view" style="display:none;">
+                    <section class="card">
+                        <h3>Contest Center</h3>
+                        <div id="countdown-timer" class="timer-big">Next Contest In: --:--:--</div>
+                        <div id="full-contest-list">
+                            <!-- Detailed contest list -->
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Problemset View -->
+                <div id="problemset-view" class="view" style="display:none;">
+                    <section class="card">
+                        <h3>Problem Library</h3>
+                        <div id="problems-list">
+                            <!-- Problems from CF -->
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Profile View -->
+                <div id="profile-view" class="view" style="display:none;">
+                    <section class="card">
+                        <h3>My Settings</h3>
+                        <p>Customize your merge_requests experience.</p>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>

@@ -1,9 +1,9 @@
-// State management
 let currentUser = localStorage.getItem('cf_handle');
 if (!currentUser && !window.location.pathname.includes('login.html') && window.location.pathname !== '/login') {
     window.location.href = '/login';
 }
 
+let dashboardLoadedHandle = null;
 let ratingChart = null;
 let tagChart = null;
 let languageChart = null;
@@ -64,6 +64,17 @@ function switchView(viewId) {
     if (viewId === 'problemset') fetchProblems();
     if (viewId === 'home') renderHomeContent();
     if (viewId === 'profile') renderProfileContent();
+    if (viewId === 'dashboard') initDashboard();
+}
+
+function initDashboard() {
+    const handleInput = document.getElementById('handle-input');
+    if (handleInput && !handleInput.value && currentUser) {
+        handleInput.value = currentUser;
+    }
+    if (dashboardLoadedHandle !== (handleInput.value || currentUser)) {
+        fetchData();
+    }
 }
 
 function logout() {
@@ -226,13 +237,14 @@ function renderHomeContent() {
 }
 
 async function fetchData() {
-    const handle = document.getElementById('handle-input').value;
+    const input = document.getElementById('handle-input');
+    const handle = input ? input.value : currentUser;
     if (!handle) return;
 
     try {
         const userResponse = await fetch(`/api/user/${handle}`);
         const user = await userResponse.json();
-        currentUser = user.handle;
+        dashboardLoadedHandle = user.handle;
         updateProfile(user);
 
         document.getElementById('add-friend-btn').style.display = 'block';

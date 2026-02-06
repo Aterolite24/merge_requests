@@ -6,6 +6,11 @@ from sqlalchemy.orm import Session
 from app.core.cf_api import cf_api
 from app.db.models import init_db, SessionLocal, Friend as FriendModel, Message as MessageModel, Blog as BlogModel, UserSetting as SettingModel, Bookmark as BookmarkModel
 import time
+import uuid
+
+# In-memory store for pending verification tokens
+# In a distributed production app, use Redis
+pending_tokens = {}
 
 # Initialize database
 init_db()
@@ -34,14 +39,32 @@ async def read_index():
 async def read_login():
     return FileResponse(os.path.join(static_path, "login.html"))
 
-@app.post("/api/login")
-async def login(handle: str, db: Session = Depends(get_db)):
+@app.get("/api/auth/token")
+async def get_auth_token(handle: str):
+    token = f"cf-m_r-{uuid.uuid4().hex[:6]}"
+    pending_tokens[handle] = token
+    return {"token": token}
+
+@app.post("/api/auth/verify")
+async def verify_auth(handle: str):
+    if handle not in pending_tokens:
+        raise HTTPException(status_code=400, detail="No pending token for this handle")
+    
+    expected_token = pending_tokens[handle]
     try:
         user = cf_api.get_user_info(handle)
-        # In a real app, we'd set a secure cookie/session here
-        return {"status": "ok", "user": user}
-    except:
-        raise HTTPException(status_code=400, detail="Invalid Codeforces handle")
+        # Check if the token is in First Name or Last Name
+        first_name = user.get('firstName', '')
+        last_name = user.get('lastName', '')
+        
+        if expected_token in first_name or expected_token in last_name:
+            # Token found! User is verified.
+            del pending_tokens[handle]
+            return {"status": "verified", "user": user}
+        else:
+            return {"status": "pending", "message": f"Token '{expected_token}' not found on your CF profile."}
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"User not found: {str(e)}")
 
 @app.get("/api/user/{handle}")
 async def get_user(handle: str):

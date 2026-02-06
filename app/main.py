@@ -66,6 +66,17 @@ async def verify_auth(handle: str):
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"User not found: {str(e)}")
 
+@app.post("/api/auth/bypass")
+async def auth_bypass(handle: str):
+    # This is for testing/development - skip verification
+    try:
+        user = cf_api.get_user_info(handle)
+        if handle in pending_tokens:
+            del pending_tokens[handle]
+        return {"status": "verified", "user": user}
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"User not found: {str(e)}")
+
 @app.get("/api/user/{handle}")
 async def get_user(handle: str):
     try:

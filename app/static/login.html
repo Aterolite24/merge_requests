@@ -110,12 +110,18 @@
         <div id="auth-step-2" style="display:none;">
             <h2>Verify Identity</h2>
             <p style="font-size: 0.9rem; margin-bottom: 15px; opacity: 0.8;">Paste this token in your Codeforces profile
-                <b>First Name</b> or <b>Last Name</b>:</p>
+                <b>First Name</b> or <b>Last Name</b>:
+            </p>
             <div id="token-display"
                 style="background:rgba(255,255,255,0.1); padding:10px; border-radius:10px; margin-bottom:20px; font-weight:bold; color:var(--accent-pink); cursor:pointer;"
                 onclick="copyToken()">Token Loading...</div>
             <button onclick="verifyToken()">I've Updated My Profile</button>
-            <small style="display:block; margin-top:15px; cursor:pointer; opacity:0.6;" onclick="resetLogin()">← Change
+            <div style="margin-top:20px; font-size: 0.8rem; opacity: 0.6;">
+                <span>Stuck? </span>
+                <span style="color:var(--accent-pink); cursor:pointer; text-decoration:underline;"
+                    onclick="skipVerification()">Skip Verification (Testing/Demo)</span>
+            </div>
+            <small style="display:block; margin-top:25px; cursor:pointer; opacity:0.6;" onclick="resetLogin()">← Change
                 Handle</small>
         </div>
 
@@ -159,6 +165,24 @@
                 }
             } catch (e) {
                 alert("Verification failed.");
+            }
+        }
+
+        async function skipVerification() {
+            if (!confirm("Skipping verification means you won't be able to use features that require proof of handle ownership. Proceed?")) return;
+
+            try {
+                const response = await fetch(`/api/auth/bypass?handle=${currentHandle}`, { method: 'POST' });
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('cf_handle', currentHandle);
+                    localStorage.setItem('cf_user', JSON.stringify(data.user));
+                    window.location.href = '/';
+                } else {
+                    alert("User not found on Codeforces.");
+                }
+            } catch (e) {
+                alert("Bypass failed.");
             }
         }
 

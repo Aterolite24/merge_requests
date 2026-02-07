@@ -4,7 +4,7 @@ from fastapi.responses import FileResponse
 import os
 from sqlalchemy.orm import Session
 from app.core.cf_api import cf_api
-from app.db.models import init_db, SessionLocal, Friend as FriendModel, Message as MessageModel, Blog as BlogModel, UserSetting as SettingModel, Bookmark as BookmarkModel
+from app.db.models import init_db, SessionLocal, Friend as FriendModel, Message as MessageModel, Blog as BlogModel, UserSetting as SettingModel, Bookmark as BookmarkModel, ProblemTask as TaskModel, ProblemNote as NoteModel, CodeTemplate as TemplateModel, ContestSubscription as SubscriptionModel
 import time
 import uuid
 
@@ -166,6 +166,73 @@ async def save_settings(handle: str, theme: str, primary_handle: str, db: Sessio
 @app.get("/api/user/{handle}/settings")
 async def get_settings(handle: str, db: Session = Depends(get_db)):
     return db.query(SettingModel).filter(SettingModel.user_handle == handle).first()
+
+# --- Problem Tasks (TODO/Bookmarks) ---
+@app.post("/api/user/tasks")
+async def add_problem_task(handle: str, problem_id: str, problem_name: str, task_type: str, db: Session = Depends(get_db)):
+    task = TaskModel(user_handle=handle, problem_id=problem_id, problem_name=problem_name, task_type=task_type, timestamp=int(time.time()))
+    db.add(task)
+    db.commit()
+    return {"status": "added"}
+
+@app.get("/api/user/{handle}/tasks")
+async def get_problem_tasks(handle: str, db: Session = Depends(get_db)):
+    return db.query(TaskModel).filter(TaskModel.user_handle == handle).all()
+
+# --- Problem Notes ---
+@app.post("/api/user/notes")
+async def add_problem_note(handle: str, problem_id: str, content: str, db: Session = Depends(get_db)):
+    note = db.query(NoteModel).filter(NoteModel.user_handle == handle, NoteModel.problem_id == problem_id).first()
+    if not note:
+        note = NoteModel(user_handle=handle, problem_id=problem_id)
+        db.add(note)
+    note.content = content
+    note.timestamp = int(time.time())
+    db.commit()
+    return {"status": "saved"}
+
+@app.get("/api/user/{handle}/notes/{problem_id}")
+async def get_problem_note(handle: str, problem_id: str, db: Session = Depends(get_db)):
+    return db.query(NoteModel).filter(NoteModel.user_handle == handle, NoteModel.problem_id == problem_id).first()
+
+# --- Code Templates ---
+@app.post("/api/user/templates")
+async def add_template(handle: str, name: str, language: str, code: str, db: Session = Depends(get_db)):
+    template = TemplateModel(user_handle=handle, name=name, language=language, code=code)
+    db.add(template)
+    db.commit()
+    return {"status": "saved"}
+
+@app.get("/api/user/{handle}/templates")
+async def get_templates(handle: str, db: Session = Depends(get_db)):
+    return db.query(TemplateModel).filter(TemplateModel.user_handle == handle).all()
+
+# --- Contest Subscriptions ---
+@app.post("/api/user/subscriptions")
+async def add_subscription(handle: str, contest_id: int, contest_name: str, start_time: int, db: Session = Depends(get_db)):
+    sub = ContestSubscription(user_handle=handle, contest_id=contest_id, contest_name=contest_name, start_time=start_time)
+    db.add(sub)
+    db.commit()
+    return {"status": "subscribed"}
+
+@app.get("/api/user/{handle}/subscriptions")
+async def get_subscriptions(handle: str, db: Session = Depends(get_db)):
+    return db.query(SubscriptionModel).filter(SubscriptionModel.user_handle == handle).all()
+
+# --- Advanced Features ---
+@app.get("/api/problemset/recommend")
+async def recommend_problem(handle: str):
+    try:
+        user_info = cf_api.get_user_info(handle)
+        rating = user_info.get('rating', 1200)
+        # Suggest a problem +200 of their rating
+        target_rating = (rating // 100) * 100 + 200
+        problems_data = cf_api.get_problemset_problems()
+        recommended = [p for p in problems_data['problems'] if p.get('rating') == target_rating]
+        import random
+        return random.choice(recommended) if recommended else problems_data['problems'][0]
+    except:
+        return {"error": "Could not recommend"}
 
 @app.get("/api/friends/{handle}")
 async def get_friends(handle: str, db: Session = Depends(get_db)):

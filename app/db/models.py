@@ -43,6 +43,42 @@ class UserSetting(Base):
     user_handle = Column(String, primary_key=True)
     theme = Column(String, default="dark-theme")
     primary_handle = Column(String)
+    favorite_tags = Column(String, default="") # Comma-separated
+    goal_rating = Column(Integer, default=0)
+
+class ProblemTask(Base):
+    __tablename__ = "problem_tasks"
+    id = Column(Integer, primary_key=True, index=True)
+    user_handle = Column(String, index=True)
+    problem_id = Column(String) # contestId + index
+    problem_name = Column(String)
+    task_type = Column(String) # 'bookmark' or 'todo'
+    timestamp = Column(Integer)
+
+class ProblemNote(Base):
+    __tablename__ = "problem_notes"
+    id = Column(Integer, primary_key=True, index=True)
+    user_handle = Column(String, index=True)
+    problem_id = Column(String)
+    content = Column(String)
+    timestamp = Column(Integer)
+
+class CodeTemplate(Base):
+    __tablename__ = "code_templates"
+    id = Column(Integer, primary_key=True, index=True)
+    user_handle = Column(String, index=True)
+    name = Column(String)
+    language = Column(String)
+    code = Column(String)
+
+class ContestSubscription(Base):
+    __tablename__ = "contest_subscriptions"
+    id = Column(Integer, primary_key=True, index=True)
+    user_handle = Column(String, index=True)
+    contest_id = Column(Integer)
+    contest_name = Column(String)
+    start_time = Column(Integer)
+    notified = Column(Integer, default=0) # Using 0/1 for SQLlite boolean
 
 # Database setup logic (simplified for this turn)
 from sqlalchemy import create_engine

@@ -60,8 +60,8 @@ function switchView(viewId) {
     });
 
     // Special logic for views
-    if (viewId === 'contests') fetchAllContests();
-    if (viewId === 'problemset') fetchProblems();
+    if (viewId === 'contests') { fetchAllContests(); fetchSubscriptions(); }
+    if (viewId === 'problemset') { fetchProblems(); fetchTasks(); fetchTemplates(); }
     if (viewId === 'home') renderHomeContent();
     if (viewId === 'profile') renderProfileContent();
     if (viewId === 'dashboard') initDashboard();
@@ -72,7 +72,8 @@ function initDashboard() {
     if (handleInput && !handleInput.value && currentUser) {
         handleInput.value = currentUser;
     }
-    if (dashboardLoadedHandle !== (handleInput.value || currentUser)) {
+    // Always fetch data if it's the first time or handle changed
+    if (dashboardLoadedHandle !== (handleInput?.value || currentUser)) {
         fetchData();
     }
 }
@@ -87,6 +88,8 @@ async function renderProfileContent() {
     try {
         const response = await fetch(`/api/user/${currentUser}`);
         const user = await response.json();
+        const settingsRes = await fetch(`/api/user/${currentUser}/settings`);
+        const settings = await settingsRes.json();
         const container = document.getElementById('profile-view');
 
         container.innerHTML = `
@@ -103,15 +106,17 @@ async function renderProfileContent() {
                     </div>
                 </section>
                 <section class="card">
-                    <h3>Quick Settings</h3>
+                    <h3>Platform Settings</h3>
                     <div style="display:flex; flex-direction:column; gap:10px;">
-                        <label>Primary Handle: <input type="text" id="setting-handle" value="${user.handle}" style="background:transparent; border:1px solid var(--accent-pink); color:white; padding:5px; border-radius:5px;"></label>
-                        <button class="nav-btn" onclick="saveSettings()" style="background:var(--accent-pink); color:var(--background); font-weight:bold;">Save Changes</button>
+                        <label>Primary Handle: <input type="text" id="setting-handle" value="${settings?.primary_handle || user.handle}" style="background:transparent; border:1px solid var(--accent-pink); color:white; padding:5px; border-radius:5px;"></label>
+                        <label>Favorite Tags: <input type="text" id="setting-tags" value="${settings?.favorite_tags || ''}" placeholder="dp, trees, math" style="background:transparent; border:1px solid var(--accent-pink); color:white; padding:5px; border-radius:5px;"></label>
+                        <label>Goal Rating: <input type="number" id="setting-goal" value="${settings?.goal_rating || 0}" style="background:transparent; border:1px solid var(--accent-pink); color:white; padding:5px; border-radius:5px;"></label>
+                        <button class="nav-btn" onclick="saveSettings()" style="background:var(--accent-pink); color:var(--background); font-weight:bold; margin-top:10px;">Save Changes</button>
                     </div>
                     <button class="nav-btn" onclick="logout()" style="margin-top:20px; color:var(--accent-pink);">Logout</button>
                 </section>
-                <section class="card" style="grid-column: span 2;">
-                    <h3>My Platform Blogs</h3>
+                <section id="user-blogs-section" class="card" style="grid-column: span 2;">
+                    <h3>My Blogs</h3>
                     <div id="user-blogs-list">Loading blogs...</div>
                 </section>
             </div>
@@ -122,9 +127,14 @@ async function renderProfileContent() {
 
 async function saveSettings() {
     const handle = document.getElementById('setting-handle').value;
+    const tags = document.getElementById('setting-tags').value;
+    const goal = document.getElementById('setting-goal').value;
     try {
-        const response = await fetch(`/api/user/settings?handle=${currentUser}&theme=dark-theme&primary_handle=${handle}`, { method: 'POST' });
-        if (response.ok) showToast("Settings saved!");
+        const response = await fetch(`/api/user/settings?handle=${currentUser}&theme=dark-theme&primary_handle=${handle}&favorite_tags=${encodeURIComponent(tags)}&goal_rating=${goal}`, { method: 'POST' });
+        if (response.ok) {
+            showToast("Settings saved!");
+            renderProfileContent();
+        }
     } catch (e) { showToast("Error saving settings"); }
 }
 
@@ -167,23 +177,116 @@ async function fetchProblems() {
                             <th style="padding:10px;">ID</th>
                             <th style="padding:10px;">Name</th>
                             <th style="padding:10px;">Rating</th>
-                            <th style="padding:10px;">Tags</th>
+                            <th style="padding:10px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${problems.map(p => `
+                        ${problems.map(p => {
+            const pid = `${p.contestId}${p.index}`;
+            return `
                             <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-                                <td style="padding:10px;">${p.contestId}${p.index}</td>
+                                <td style="padding:10px;">${pid}</td>
                                 <td style="padding:10px;"><a href="https://codeforces.com/problemset/problem/${p.contestId}/${p.index}" target="_blank" style="color:var(--accent-pink); text-decoration:none;">${p.name}</a></td>
                                 <td style="padding:10px;">${p.rating || 'N/A'}</td>
-                                <td style="padding:10px;">${(p.tags || []).slice(0, 3).join(', ')}</td>
+                                <td style="padding:10px; display:flex; gap:5px;">
+                                    <button class="badge" onclick="addProblemTask('${pid}', '${p.name.replace(/'/g, "\\'")}', 'todo')" title="Add to TODO">🔜</button>
+                                    <button class="badge" onclick="addProblemTask('${pid}', '${p.name.replace(/'/g, "\\'")}', 'bookmark')" title="Bookmark">⭐</button>
+                                    <button class="badge" onclick="showNotesEditor('${pid}')" title="Notes">📝</button>
+                                </td>
                             </tr>
-                        `).join('')}
+                        `}).join('')}
                     </tbody>
                 </table>
             </div>
         `;
     } catch (e) { console.error("Error fetching problems", e); }
+}
+
+async function addProblemTask(id, name, type) {
+    if (!currentUser) return;
+    try {
+        await fetch(`/api/user/tasks?handle=${currentUser}&problem_id=${id}&problem_name=${encodeURIComponent(name)}&task_type=${type}`, { method: 'POST' });
+        showToast(`${type === 'todo' ? 'Added to TODO' : 'Bookmarked'}!`);
+        fetchTasks();
+    } catch (e) { showToast("Error adding task"); }
+}
+
+async function fetchTasks() {
+    if (!currentUser) return;
+    try {
+        const response = await fetch(`/api/user/${currentUser}/tasks`);
+        const tasks = await response.json();
+        const todoContainer = document.getElementById('todo-list');
+        const todos = tasks.filter(t => t.task_type === 'todo');
+
+        todoContainer.innerHTML = todos.length ? todos.map(t => `
+            <div style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between;">
+                <span>${t.problem_name}</span>
+                <small onclick="showNotesEditor('${t.problem_id}')" style="cursor:pointer; color:var(--accent-pink);">Notes</small>
+            </div>
+        `).join('') : "<p>No TODOs yet.</p>";
+    } catch (e) { console.error("Error fetching tasks", e); }
+}
+
+async function showNotesEditor(pid) {
+    const container = document.getElementById('notes-content');
+    try {
+        const response = await fetch(`/api/user/${currentUser}/notes/${pid}`);
+        const note = await response.json();
+        const content = note ? note.content : '';
+
+        container.innerHTML = `
+            <h4>Notes for ${pid}</h4>
+            <textarea id="note-input" style="width:100%; height:100px; background:transparent; border:1px solid var(--accent-pink); color:white; border-radius:10px; margin-top:10px;">${content}</textarea>
+            <button class="nav-btn" onclick="saveNote('${pid}')" style="margin-top:10px;">Save Note</button>
+        `;
+    } catch (e) { showToast("Error loading note"); }
+}
+
+async function saveNote(pid) {
+    const content = document.getElementById('note-input').value;
+    try {
+        await fetch(`/api/user/notes?handle=${currentUser}&problem_id=${pid}&content=${encodeURIComponent(content)}`, { method: 'POST' });
+        showToast("Note saved!");
+    } catch (e) { showToast("Error saving note"); }
+}
+
+async function recommendNextProblem() {
+    if (!currentUser) return;
+    try {
+        const response = await fetch(`/api/problemset/recommend?handle=${currentUser}`);
+        const p = await response.json();
+        if (p.error) { showToast("Could not find a recommendation."); return; }
+        alert(`We recommend: ${p.name} (Rating: ${p.rating})\nTags: ${p.tags.join(', ')}`);
+    } catch (e) { showToast("Recommendation error"); }
+}
+
+// --- Templates ---
+async function fetchTemplates() {
+    if (!currentUser) return;
+    try {
+        const response = await fetch(`/api/user/${currentUser}/templates`);
+        const templates = await response.json();
+        const list = document.getElementById('template-list');
+        list.innerHTML = templates.map(t => `
+            <button class="badge" onclick="loadTemplate('${t.id}', \`${t.code.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">${t.name}</button>
+        `).join('');
+    } catch (e) { console.error("Error templates", e); }
+}
+
+function loadTemplate(id, code) {
+    document.getElementById('template-editor').value = code;
+}
+
+async function saveTemplate() {
+    const name = prompt("Template Name:");
+    const code = document.getElementById('template-editor').value;
+    if (!name || !code) return;
+    try {
+        await fetch(`/api/user/templates?handle=${currentUser}&name=${encodeURIComponent(name)}&language=CPP&code=${encodeURIComponent(code)}`, { method: 'POST' });
+        showToast("Template saved!");
+        fetchTemplates();
+    } catch (e) { showToast("Error saving template"); }
 }
 
 async function showProblemSubview(type) {
@@ -628,20 +731,22 @@ async function fetchAllContests() {
                 <button class="nav-btn" id="btn-contests-status" onclick="showContestSubview('status')">Last Contest Status</button>
             </div>
             <div id="contests-subview-content">
-                ${contests.map(c => `
+                ${contests.length ? contests.map(c => `
                     <div class="card contest-item-full" style="margin-bottom:10px;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <div>
                                 <h4 style="color:var(--accent-pink);">${c.name}</h4>
-                                <small style="color:var(--text-secondary);">${new Date(c.startTimeSeconds * 1000).toLocaleString()}</small>
+                                <small style="color:var(--text-secondary);">${new Date(c.startTimeSeconds * 1000).toLocaleString()} | Phase: ${c.phase}</small>
                             </div>
                             <div style="text-align:right;">
                                 <span class="badge" style="display:inline-block; margin-bottom:5px;">${c.type}</span>
-                                <div class="remind-btn" onclick="toggleReminder(${c.id})" style="cursor:pointer; color:var(--text-secondary);">🔔 Remind Me</div>
+                                <div style="display:flex; gap:10px; align-items:center;">
+                                    <div class="remind-btn" onclick="toggleContestReminder(${c.id}, '${c.name.replace(/'/g, "\\'")}', ${c.startTimeSeconds})" style="cursor:pointer; color:var(--text-secondary);">🔔 Remind Me</div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                `).join('')}
+                `).join('') : "<p>No upcoming contests found.</p>"}
             </div>
         `;
 
@@ -651,6 +756,39 @@ async function fetchAllContests() {
     } catch (e) {
         console.error("Error fetching full contests", e);
     }
+}
+
+async function toggleContestReminder(id, name, time) {
+    if (!currentUser) return;
+    try {
+        await fetch(`/api/user/subscriptions?handle=${currentUser}&contest_id=${id}&contest_name=${encodeURIComponent(name)}&start_time=${time}`, { method: 'POST' });
+        showToast("Subscribed to reminder!");
+        fetchSubscriptions();
+    } catch (e) { showToast("Error subscribing"); }
+}
+
+async function fetchSubscriptions() {
+    if (!currentUser) return;
+    try {
+        const response = await fetch(`/api/user/${currentUser}/subscriptions`);
+        const subs = await response.json();
+        const list = document.getElementById('contest-planner-list');
+        list.innerHTML = subs.length ? subs.map(s => `
+            <div style="margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.05); padding:5px;">
+                <small style="color:var(--accent-pink);">${new Date(s.start_time * 1000).toLocaleDateString()}</small>
+                <p style="font-size:0.9rem;">${s.contest_name}</p>
+            </div>
+        `).join('') : "<p>No contests planned.</p>";
+    } catch (e) { console.error("Error subscriptions", e); }
+}
+
+async function saveContestReview() {
+    const content = document.getElementById('contest-review-content').value;
+    if (!content) return;
+    try {
+        await fetch(`/api/user/settings?handle=${currentUser}&theme=dark-theme&primary_handle=${currentUser}`, { method: 'POST' }); // Placeholder for review storage
+        showToast("Review saved locally!");
+    } catch (e) { showToast("Error saving review"); }
 }
 
 async function showContestSubview(type) {

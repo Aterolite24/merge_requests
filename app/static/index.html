@@ -161,23 +161,57 @@
 
                 <!-- Contests View -->
                 <div id="contests-view" class="view" style="display:none;">
-                    <section class="card">
-                        <h3>Contest Center</h3>
-                        <div id="countdown-timer" class="timer-big">Next Contest In: --:--:--</div>
-                        <div id="full-contest-list">
-                            <!-- Detailed contest list -->
-                        </div>
-                    </section>
+                    <div class="dashboard-grid">
+                        <section class="card" style="grid-column: span 2;">
+                            <h3>Contest Center</h3>
+                            <div id="countdown-timer" class="timer-big">Next Contest In: --:--:--</div>
+                            <div id="full-contest-list">
+                                <!-- Detailed contest list -->
+                            </div>
+                        </section>
+                        <section id="contest-planner-section" class="card">
+                            <h3>Personal Contest Planner</h3>
+                            <div id="contest-planner-list">Loading planner...</div>
+                        </section>
+                        <section id="contest-review-section" class="card">
+                            <h3>Contest Review Template</h3>
+                            <textarea id="contest-review-content" placeholder="Write your contest learnings here..."
+                                style="width:100%; height:100px; background:transparent; border:1px solid var(--accent-pink); color:white; border-radius:10px; margin-bottom:10px;"></textarea>
+                            <button class="nav-btn" onclick="saveContestReview()">Save Review</button>
+                        </section>
+                    </div>
                 </div>
 
                 <!-- Problemset View -->
                 <div id="problemset-view" class="view" style="display:none;">
-                    <section class="card">
-                        <h3>Problem Library</h3>
-                        <div id="problems-list">
-                            <!-- Problems from CF -->
-                        </div>
-                    </section>
+                    <div class="dashboard-grid">
+                        <section class="card" style="grid-column: span 2;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <h3>Problem Library</h3>
+                                <button class="nav-btn" onclick="recommendNextProblem()" style="font-size:0.8rem;">What
+                                    to solve next?</button>
+                            </div>
+                            <div id="problems-list">
+                                <!-- Problems from CF -->
+                            </div>
+                        </section>
+                        <section id="todo-queue-section" class="card">
+                            <h3>TODO Queue</h3>
+                            <div id="todo-list">Loading TODOs...</div>
+                        </section>
+                        <section id="problem-notes-section" class="card">
+                            <h3>Problem Notes</h3>
+                            <div id="notes-content">Select a problem to view/add notes.</div>
+                        </section>
+                        <section id="template-manager-section" class="card" style="grid-column: span 2;">
+                            <h3>Code Template Manager</h3>
+                            <div id="template-list" style="display:flex; gap:10px; margin-bottom:10px;"></div>
+                            <textarea id="template-editor" placeholder="Enter your template code here..."
+                                style="width:100%; height:150px; background:transparent; border:1px solid var(--accent-pink); color:white; border-radius:10px; font-family:monospace;"></textarea>
+                            <button class="nav-btn" onclick="saveTemplate()" style="margin-top:10px;">Save
+                                Template</button>
+                        </section>
+                    </div>
                 </div>
 
                 <!-- Profile View -->
